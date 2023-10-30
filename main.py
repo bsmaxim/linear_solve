@@ -134,6 +134,7 @@ def solve_step(
 ):
     """
     picked_vars - индексы взятых базисных переменных (строка, колонка)
+    return: [need_stop: bool, matrix, picked_vars]
     """
     row_length = len(matrix[0]) # учитывается b
     цэшки = init_array(len(matrix))
@@ -234,7 +235,7 @@ def simplex_solve(system):
     initial, min_max, conditions = system
     matrix = to_matrix(conditions)
     picked_vars = initial_basic_vars(matrix)
-    
+
     if min_max == "min":
         is_min = True
     elif min_max == "max":
