@@ -92,11 +92,11 @@ def print_system(system):
     print("f(x) = " + to_string(initial, False) + " -> " + min_max)
     for condition in conditions:
         print(to_string(condition))
-    
+
 def print_matrix(matrix):
     for row in matrix:
         for value in row:
-            print(value, end=" ")
+            print(round(value,4), end=" ")
         print()
 
 
@@ -149,7 +149,7 @@ def solve_step(
             deltas[idx] += цэшки[row_idx] * value
     for idx in range(row_length-1):
         deltas[idx] -= basic_equation[idx]
-    print(deltas)
+    print([round(x, 3) for x in deltas])
 
     # находим тету для нужных дельт (дельта по минимальному модулю)
     what_deltas = find_min_indices(deltas[:-1:], is_min)
@@ -157,7 +157,7 @@ def solve_step(
     # TODO: сделать красиво
     if len(what_deltas) == 0:
         # print_matrix(matrix)
-        return [True]
+        return [True, None, None, None]
     tetas = []
     for var_idx in what_deltas:
         teta = []
