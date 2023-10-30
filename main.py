@@ -92,6 +92,12 @@ def print_system(system):
     print("f(x) = " + to_string(initial, False) + " -> " + min_max)
     for condition in conditions:
         print(to_string(condition))
+    
+def print_matrix(matrix):
+    for row in matrix:
+        for value in row:
+            print(value, end=" ")
+        print()
 
 
 def to_matrix(conditions: list[list]):
@@ -108,11 +114,14 @@ def init_array(row_size, column_size = 0, value=None):
     return [[value for _ in range(column_size)] for _ in range(row_size)]
 
 
-def find_min_indices(arr):
-    # Находим минимальный по модулю элемент, исключая 0
-    min_val = min(filter(lambda x: x != 0, map(abs, arr)))
-
-    # Находим все индексы элементов с минимальным модулем
+def find_min_indices(arr, is_min=False):
+    if is_min:
+        filtered = list(filter(lambda x: x != 0 and x > 0, arr))
+    else:
+        filtered = list(filter(lambda x: x != 0 and x < 0, arr))
+    if len(filtered) == 0:
+        return []
+    min_val = min(map(abs, filtered))
     min_indices = [i for i, x in enumerate(arr) if abs(x) == min_val and x != 0]
 
     return min_indices
@@ -127,12 +136,11 @@ def solve_step(
     picked_vars - индексы взятых базисных переменных (строка, колонка)
     """
     row_length = len(matrix[0]) # учитывается b
-    new_matrix = [[0]*row_length for x in range(len(matrix))]
     цэшки = init_array(len(matrix))
     for var_coordinate in picked_vars:
         цэшки[var_coordinate[0]] = basic_equation[var_coordinate[1]]
     
-
+    print_matrix(matrix)
     # находим дельту Сб_i * x_i - initial_i
     deltas = init_array(row_length, value=0)
     for row_idx, row in enumerate(matrix):
@@ -140,9 +148,15 @@ def solve_step(
             deltas[idx] += цэшки[row_idx] * value
     for idx in range(row_length-1):
         deltas[idx] -= basic_equation[idx]
+    print(deltas)
 
     # находим тету для нужных дельт (дельта по минимальному модулю)
     what_deltas = find_min_indices(deltas[:-1:])
+
+    # TODO: сделать красиво
+    if len(what_deltas) == 0:
+        print_matrix(matrix)
+        return None
     tetas = []
     for var_idx in what_deltas:
         teta = []
@@ -156,17 +170,42 @@ def solve_step(
     
     # выбираем следущую базовую переменную
     next_basic = None
+    # выбор если базовый вариант
     for i in range(len(what_deltas)):
         column_idx = what_deltas[i]
         row_idx = tetas[i].index(min(tetas[i]))
         next_basic = (row_idx, column_idx)
 
+    next_basic_value = matrix[next_basic[0]][next_basic[1]]
     print(next_basic)
+    print(next_basic_value)
 
     # заменяем X базовую
-    # преобразовываем и возвращаем new_matrix
+    new_picked_vars = [next_basic
+                       if x[0] == next_basic[0]
+                       else x
+                       for x in picked_vars]
+
+    new_matrix = [[0]*row_length for x in range(len(matrix))]
+    # преобразовываем матрицу для новой базовой
+    for row_idx, row in enumerate(matrix):
+        for idx, value in enumerate(row):
+            if row_idx == next_basic[0]:
+                if idx == next_basic[1]:
+                    new_matrix[row_idx][idx] = 1
+                else:
+                    new_matrix[row_idx][idx] = value/next_basic_value
+            else:
+                if idx != next_basic[1]:
+                    # пересчёт
+                    new_matrix[row_idx][idx] = (
+                        next_basic_value*value
+                        - matrix[row_idx][next_basic[1]]*matrix[next_basic[0]][idx]
+                        )/next_basic_value
+
+
     
-    return [new_matrix]
+    return [new_matrix, new_picked_vars]
 
 
 def check_basic(arr):
@@ -175,11 +214,9 @@ def check_basic(arr):
 def initial_basic_vars(matrix):
     row_length = len(matrix[0])
     columns = init_array(row_length, len(matrix))
-    print(columns)
     for row_idx, row in enumerate(matrix):
         for column_idx, j in enumerate(row):
             columns[column_idx][row_idx] = j
-    print(columns)
     
     vars = []
     for column_idx, column in enumerate(columns):
@@ -190,14 +227,14 @@ def initial_basic_vars(matrix):
                     one_idx = i
                     break
             vars.append((one_idx, column_idx))
-    print(vars)
     return vars
 
 
 def simplex_solve(system):
     initial, min_max, conditions = system
     matrix = to_matrix(conditions)
-    initial_vars = initial_basic_vars(matrix)
+    picked_vars = initial_basic_vars(matrix)
+    # TODO: выбор min_max
     if min_max == "min":
         pass
     elif min_max == "max":
@@ -205,11 +242,21 @@ def simplex_solve(system):
     elif min_max == "extr":
         pass
     # пока is_min == False => max
-    result = solve_step(initial, False, matrix, initial_vars)
-    print(result)
+    c = 4
+    while True:
+        if c == 0:
+            break
+        res = solve_step(initial, False, matrix, picked_vars)
+        # TODO: сделать красиво
+        if res == None:
+            break
+        matrix = res[0]
+        picked_vars = res[1]
+        # print_matrix(new_matrix)
+        c -= 1
 
 
 if __name__ == "__main__":
     system = read_system()
-    # print_system(system)
+    #print_system(system)
     simplex_solve(system)
