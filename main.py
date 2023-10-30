@@ -151,12 +151,12 @@ def solve_step(
     print(deltas)
 
     # находим тету для нужных дельт (дельта по минимальному модулю)
-    what_deltas = find_min_indices(deltas[:-1:])
+    what_deltas = find_min_indices(deltas[:-1:], is_min)
 
     # TODO: сделать красиво
     if len(what_deltas) == 0:
-        print_matrix(matrix)
-        return None
+        # print_matrix(matrix)
+        return [True]
     tetas = []
     for var_idx in what_deltas:
         teta = []
@@ -205,7 +205,7 @@ def solve_step(
 
 
     
-    return [new_matrix, new_picked_vars]
+    return [False, new_matrix, new_picked_vars]
 
 
 def check_basic(arr):
@@ -234,26 +234,20 @@ def simplex_solve(system):
     initial, min_max, conditions = system
     matrix = to_matrix(conditions)
     picked_vars = initial_basic_vars(matrix)
-    # TODO: выбор min_max
+    
     if min_max == "min":
-        pass
+        is_min = True
     elif min_max == "max":
-        pass
-    elif min_max == "extr":
-        pass
+        is_min = False
     # пока is_min == False => max
-    c = 4
+
     while True:
-        if c == 0:
-            break
-        res = solve_step(initial, False, matrix, picked_vars)
+        res = solve_step(initial, is_min, matrix, picked_vars)
         # TODO: сделать красиво
-        if res == None:
+        if res[0]:
             break
-        matrix = res[0]
-        picked_vars = res[1]
-        # print_matrix(new_matrix)
-        c -= 1
+        matrix = res[1]
+        picked_vars = res[2]
 
 
 if __name__ == "__main__":
